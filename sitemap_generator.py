@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from urllib.parse import urljoin, urlparse
+import urllib.robotparser
 
 import pytz
 import requests
@@ -39,6 +40,9 @@ USE_TIME_FILTER = True
 # Only include pages modified after this date
 TIME_FILTER_THRESHOLD = datetime(2022, 9, 20, tzinfo=pytz.UTC)
 
+# Whether to respect the rules in robots.txt
+RESPECT_ROBOTS_TXT = True
+
 # Initialize XML
 urlset = ET.Element('urlset', xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
 
@@ -50,6 +54,19 @@ lock = threading.Lock()
 
 # Requests session for connection pooling
 session = requests.Session()
+
+# Initialize robots.txt parser
+rp = urllib.robotparser.RobotFileParser()
+rp.set_url(urljoin(START_URL, '/robots.txt'))
+rp.read()
+
+
+def can_fetch(url):
+    """Return whether we can fetch the URL according to the robots.txt."""
+    if RESPECT_ROBOTS_TXT:
+        return rp.can_fetch('*', url)
+    else:
+        return True
 
 
 def process_page(url, lastmod):
@@ -68,7 +85,7 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
     """
     Generates the sitemap by recursively crawling the links found in the pages.
     """
-    if depth > max_depth:
+    if depth > max_depth or not can_fetch(url):
         return
 
     try:
@@ -112,10 +129,11 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
         params = ([max_depth] * len(links_to_process), [depth + 1] * len(links_to_process))
         executor.map(generate_sitemap, links_to_process, *params)
 
+    # Write the generated sitemap to a file
+    tree = ET.ElementTree(urlset)
+    tree.write(OUTPUT_FILENAME, encoding='utf-8', xml_declaration=True)
 
-# Start generating the sitemap
-generate_sitemap(START_URL)
 
-# Write the generated sitemap to a file
-tree = ET.ElementTree(urlset)
-tree.write(OUTPUT_FILENAME, encoding='utf-8', xml_declaration=True)
+if __name__ == "__main__":
+    # Start generating the sitemap
+    generate_sitemap(START_URL)
