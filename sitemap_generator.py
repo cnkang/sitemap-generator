@@ -1,3 +1,9 @@
+"""
+Sitemap Generator Script.
+
+This script is used to generate a sitemap by crawling the links of a given website.
+"""
+
 import email.utils
 import threading
 import xml.etree.ElementTree as ET
@@ -8,6 +14,7 @@ from urllib.parse import urljoin, urlparse
 import pytz
 import requests
 from bs4 import BeautifulSoup
+
 
 # Global configuration variables
 
@@ -30,7 +37,7 @@ START_URL = 'https://www.example.com/home'
 USE_TIME_FILTER = True
 
 # Only include pages modified after this date
-TIME_FILTER_THRESHOLD = datetime(2022, 9, 20, tzinfo=pytz.UTC)  
+TIME_FILTER_THRESHOLD = datetime(2022, 9, 20, tzinfo=pytz.UTC)
 
 # Initialize XML
 urlset = ET.Element('urlset', xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
@@ -57,8 +64,10 @@ def process_page(url, lastmod):
         ET.SubElement(url_element, 'priority').text = '1.0'
 
 
-# Function to generate the sitemap
 def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
+    """
+    Generates the sitemap by recursively crawling the links found in the pages.
+    """
     if depth > max_depth:
         return
 
@@ -69,11 +78,12 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
         print(f"Error fetching {url}: {exc}")
         return
 
+    # Short circuit if not a successful response
     if response.status_code != 200:
         print(f"Failed to retrieve {url}, status code: {response.status_code}")
         return
 
-    # Using lxml parser for faster parsing
+    # Parsing page contents
     soup = BeautifulSoup(response.content, 'lxml')
 
     # Retrieve the last modification time
@@ -88,14 +98,12 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
 
     # Collect and recursively process links
     links_to_process = []
-    base_url = url
     for link in soup.find_all('a', href=True):
         href = link['href']
         if not href.startswith('#'):
-            full_url = urljoin(base_url, href)
-            domain = urlparse(full_url).netloc
+            full_url = urljoin(url, href)
             with lock:  # Protecting the critical section with a lock
-                if full_url not in visited_urls and domain == DOMAIN:
+                if full_url not in visited_urls and urlparse(full_url).netloc == DOMAIN:
                     visited_urls.add(full_url)
                     links_to_process.append(full_url)
 
