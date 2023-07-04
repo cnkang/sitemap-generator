@@ -65,8 +65,7 @@ def can_fetch(url):
     """Return whether we can fetch the URL according to the robots.txt."""
     if RESPECT_ROBOTS_TXT:
         return rp.can_fetch('*', url)
-    else:
-        return True
+    return True
 
 
 def process_page(url, lastmod):
