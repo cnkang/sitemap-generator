@@ -1,26 +1,36 @@
-"""
-A script to crawl a website and generate a sitemap in XML format.
-"""
-
-from datetime import datetime
 import email.utils
 import threading
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from urllib.parse import urljoin, urlparse
+
 import pytz
 import requests
 from bs4 import BeautifulSoup
 
-
 # Global configuration variables
-MAX_DEPTH = 10  # Maximum depth of links to traverse
-DOMAIN = 'www.example.com'  # Only links from this domain will be included in the sitemap
-MAX_WORKERS = 5  # Maximum number of threads used for parallel processing
-OUTPUT_FILENAME = 'sitemap.xml'  # The file name of the generated sitemap
-START_URL = 'https://www.example.com/home'  # The initial URL to start crawling from
-USE_TIME_FILTER = True  # Whether to filter pages by modification time
-TIME_FILTER_THRESHOLD = datetime(2022, 9, 20, tzinfo=pytz.UTC)  # Only include pages modified after this date
+
+# Maximum depth of links to traverse
+MAX_DEPTH = 10
+
+# Only links from this domain will be included in the sitemap
+DOMAIN = 'www.example.com'
+
+# Maximum number of threads used for parallel processing
+MAX_WORKERS = 5
+
+# The file name of the generated sitemap
+OUTPUT_FILENAME = 'sitemap.xml'
+
+# The initial URL to start crawling from
+START_URL = 'https://www.example.com/home'
+
+# Whether to filter pages by modification time
+USE_TIME_FILTER = True
+
+# Only include pages modified after this date
+TIME_FILTER_THRESHOLD = datetime(2022, 9, 20, tzinfo=pytz.UTC)  
 
 # Initialize XML
 urlset = ET.Element('urlset', xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
@@ -39,7 +49,7 @@ def process_page(url, lastmod):
     """
     Adds page details to the sitemap.
     """
-    with lock:
+    with lock:  # Protecting the critical section with a lock
         url_element = ET.SubElement(urlset, 'url')
         ET.SubElement(url_element, 'loc').text = url
         ET.SubElement(url_element, 'lastmod').text = lastmod.isoformat()
@@ -47,18 +57,16 @@ def process_page(url, lastmod):
         ET.SubElement(url_element, 'priority').text = '1.0'
 
 
+# Function to generate the sitemap
 def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
-    """
-    Recursively crawls a website and generates a sitemap.
-    """
     if depth > max_depth:
         return
 
     try:
         # Fetch the content of the page
         response = session.get(url)
-    except requests.RequestException as error:
-        print(f"Error fetching {url}: {error}")
+    except requests.RequestException as exc:
+        print(f"Error fetching {url}: {exc}")
         return
 
     if response.status_code != 200:
@@ -86,14 +94,15 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
         if not href.startswith('#'):
             full_url = urljoin(base_url, href)
             domain = urlparse(full_url).netloc
-            with lock:
+            with lock:  # Protecting the critical section with a lock
                 if full_url not in visited_urls and domain == DOMAIN:
                     visited_urls.add(full_url)
                     links_to_process.append(full_url)
 
     # Use multithreading to process links
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        executor.map(generate_sitemap, links_to_process, [max_depth] * len(links_to_process), [depth + 1] * len(links_to_process))
+        params = ([max_depth] * len(links_to_process), [depth + 1] * len(links_to_process))
+        executor.map(generate_sitemap, links_to_process, *params)
 
 
 # Start generating the sitemap
