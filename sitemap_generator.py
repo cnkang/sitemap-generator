@@ -22,7 +22,7 @@ S3_BUCKET = 'example-s3-bucket'
 S3_KEY = '/path/to/sitemap.xml'
 
 # Set global variable RUN_LOCALLY
-RUN_LOCALLY = 'False'
+RUN_LOCALLY = True
 
 # Maximum depth of links to traverse
 MAX_DEPTH = 10
