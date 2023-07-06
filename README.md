@@ -30,10 +30,6 @@ git clone https://github.com/cnkang/sitemap-generator.git
 ```
 cd sitemap-generator
 ```
-3. Install the necessary dependencies using `requirements.txt`:
-```
-pip install -r requirements.txt
-```
 
 ## Usage
 

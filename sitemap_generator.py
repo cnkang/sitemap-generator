@@ -13,10 +13,16 @@ from urllib.parse import urljoin, urlparse
 import urllib.robotparser
 import urllib.request
 from urllib.error import URLError
-
-from bs4 import BeautifulSoup
+import html.parser
 
 # Global configuration variables
+
+# AWS S3 bucket and key configuration
+S3_BUCKET = 'infosec-temp'
+S3_KEY = '/es-sitemap.xml'
+
+# Set global variable RUN_LOCALLY
+RUN_LOCALLY = 'False'
 
 # Maximum depth of links to traverse
 MAX_DEPTH = 10
@@ -51,13 +57,50 @@ visited_urls = set()
 # Lock to ensure thread safety
 lock = threading.Lock()
 
-# Requests session for connection pooling
-session = urllib.request.Session()
-
 # Initialize robots.txt parser
 rp = urllib.robotparser.RobotFileParser()
 rp.set_url(urljoin(START_URL, '/robots.txt'))
 rp.read()
+
+class LinkParser(html.parser.HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.links = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            for attr in attrs:
+                if attr[0] == 'href':
+                    self.links.append(attr[1])
+
+def save_to_s3(filename):
+    """
+    Uploads the sitemap to S3.
+    """
+    import boto3
+    s3_client = boto3.client('s3')
+    
+    with open(filename, 'rb') as file:
+        s3_client.upload_fileobj(file, S3_BUCKET, S3_KEY)
+
+def main():
+    # Start generating the sitemap
+    generate_sitemap(START_URL)
+
+    # Upload sitemap to S3 or save it locally
+    if RUN_LOCALLY:
+        print(f"Sitemap saved to {OUTPUT_FILENAME}")
+    else:
+        save_to_s3(OUTPUT_FILENAME)
+        print(f"Sitemap uploaded to S3: {S3_BUCKET}/{S3_KEY}")
+# AWS Lambda handler function
+def lambda_handler(event, context):
+    main()
+    return {
+        'statusCode': 200,
+        'body': 'Sitemap generation complete.'
+    }
+
 
 
 def can_fetch(url):
@@ -88,8 +131,7 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
 
     try:
         # Fetch the content of the page
-        req = urllib.request.Request(url)
-        response = urllib.request.urlopen(req)
+        response = urllib.request.urlopen(url)
     except URLError as exc:
         print(f"Error fetching {url}: {exc}")
         return
@@ -100,7 +142,8 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
         return
 
     # Parsing page contents
-    soup = BeautifulSoup(response.read(), 'lxml')
+    parser = LinkParser()
+    parser.feed(response.read().decode())
 
     # Retrieve the last modification time
     lastmod_str = response.headers.get('last-modified', datetime.now().isoformat())
@@ -114,7 +157,7 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
 
     # Collect and recursively process links
     links_to_process = []
-    for link in soup.find_all('a', href=True):
+    for href in parser.links:
         href = link['href']
         if not href.startswith('#'):
             full_url = urljoin(url, href)
@@ -133,6 +176,6 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
     tree.write(OUTPUT_FILENAME, encoding='utf-8', xml_declaration=True)
 
 
+# If running this script locally, call the main function
 if __name__ == "__main__":
-    # Start generating the sitemap
-    generate_sitemap(START_URL)
+    main()
