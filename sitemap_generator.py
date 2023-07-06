@@ -8,11 +8,10 @@ import email.utils
 import threading
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
 import urllib.robotparser
 
-import pytz
 import requests
 from bs4 import BeautifulSoup
 
@@ -38,7 +37,7 @@ START_URL = 'https://www.example.com/home'
 USE_TIME_FILTER = True
 
 # Only include pages modified after this date
-TIME_FILTER_THRESHOLD = datetime(2022, 9, 20, tzinfo=pytz.UTC)
+TIME_FILTER_THRESHOLD = datetime(2022, 9, 20, tzinfo=timezone.utc)
 
 # Whether to respect the rules in robots.txt
 RESPECT_ROBOTS_TXT = True
