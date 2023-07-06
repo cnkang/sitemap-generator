@@ -18,8 +18,8 @@ import html.parser
 # Global configuration variables
 
 # AWS S3 bucket and key configuration
-S3_BUCKET = 'infosec-temp'
-S3_KEY = '/es-sitemap.xml'
+S3_BUCKET = 'example-s3-bucket'
+S3_KEY = '/path/to/sitemap.xml'
 
 # Set global variable RUN_LOCALLY
 RUN_LOCALLY = 'False'
