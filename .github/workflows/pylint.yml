@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint requests beautifulsoup4 pytz lxml
+        pip install pylint boto3
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
