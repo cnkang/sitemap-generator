@@ -11,10 +11,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
 import urllib.robotparser
+import urllib.request
+from urllib.error import URLError
 
-import requests
 from bs4 import BeautifulSoup
-
 
 # Global configuration variables
 
@@ -52,7 +52,7 @@ visited_urls = set()
 lock = threading.Lock()
 
 # Requests session for connection pooling
-session = requests.Session()
+session = urllib.request.Session()
 
 # Initialize robots.txt parser
 rp = urllib.robotparser.RobotFileParser()
@@ -88,18 +88,19 @@ def generate_sitemap(url, max_depth=MAX_DEPTH, depth=0):
 
     try:
         # Fetch the content of the page
-        response = session.get(url)
-    except requests.RequestException as exc:
+        req = urllib.request.Request(url)
+        response = urllib.request.urlopen(req)
+    except URLError as exc:
         print(f"Error fetching {url}: {exc}")
         return
 
     # Short circuit if not a successful response
-    if response.status_code != 200:
-        print(f"Failed to retrieve {url}, status code: {response.status_code}")
+    if response.status != 200:
+        print(f"Failed to retrieve {url}, status code: {response.status}")
         return
 
     # Parsing page contents
-    soup = BeautifulSoup(response.content, 'lxml')
+    soup = BeautifulSoup(response.read(), 'lxml')
 
     # Retrieve the last modification time
     lastmod_str = response.headers.get('last-modified', datetime.now().isoformat())

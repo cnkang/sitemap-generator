@@ -17,7 +17,6 @@ This script is used to generate a sitemap for a given website. It crawls the web
 
 ## Dependencies
 
-- requests
 - beautifulsoup4
 - lxml
 
