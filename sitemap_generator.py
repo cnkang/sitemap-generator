@@ -34,7 +34,7 @@ DOMAIN = 'www.example.com'
 MAX_WORKERS = 5
 
 # The file name of the generated sitemap
-OUTPUT_FILENAME = 'sitemap.xml'
+OUTPUT_FILENAME = 'tmp/sitemap.xml'
 
 # The initial URL to start crawling from
 START_URL = 'https://www.example.com/home'
