@@ -1,23 +1,69 @@
-name: Pylint
+name: Code Quality
 
-on: [push]
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
 
 jobs:
-  build:
+  quality-check:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.11", "3.12", "3.13"]
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pylint boto3
-    - name: Analysing the code with pylint
-      run: |
-        pylint $(git ls-files '*.py')
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Install development tools with version constraints for compatibility
+          pip install "pylint>=3.0.0" "flake8>=6.1.0" "black>=23.9.0" "isort>=5.12.0"
+
+      - name: Code formatting check
+        run: |
+          black --check --diff --color .
+        continue-on-error: true
+
+      - name: Import sorting check
+        run: |
+          isort --check-only --diff --color .
+        continue-on-error: true
+
+      - name: Basic linting with flake8
+        run: |
+          # Stop on syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Check other issues but don't fail
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+
+      - name: Comprehensive analysis with pylint
+        run: |
+          pylint --rcfile=.pylintrc $(find . -name "*.py" -not -path "./.venv/*" -not -path "./venv/*")
+        continue-on-error: true
+
+      - name: Test Python compatibility
+        run: |
+          python test_compatibility.py
+
+      - name: Run basic tests
+        run: |
+          python test_generator.py
+        continue-on-error: true

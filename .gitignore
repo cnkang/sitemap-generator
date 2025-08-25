@@ -160,3 +160,19 @@ cython_debug/
 #.idea/
 .vscode/settings.json
 .vscode/*
+
+# Project specific
+sitemap.xml
+tmp/
+.env
+*.log
+
+# Code quality reports
+bandit-report.json
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Pre-commit
+.pre-commit-config.yaml.bak
