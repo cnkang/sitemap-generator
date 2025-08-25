@@ -44,7 +44,7 @@ jobs:
 
       - name: Import sorting check
         run: |
-          isort --check-only --diff --color .
+          isort --profile=black --check-only --diff --color .
         continue-on-error: true
 
       - name: Basic linting with flake8
