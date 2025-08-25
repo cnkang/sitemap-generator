@@ -31,7 +31,7 @@ def test_basic_functionality():
 
             if success and os.path.exists(tmp.name):
                 print(f"✅ Test passed! Sitemap generated: {tmp.name}")
-                with open(tmp.name, "r") as f:
+                with open(tmp.name, "r", encoding="utf-8") as f:
                     content = f.read()
                     print(f"Sitemap size: {len(content)} characters")
             else:

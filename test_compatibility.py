@@ -13,7 +13,7 @@ def test_python_version():
     if version < (3, 11):
         print("❌ Python 3.11+ required")
         return False
-    elif version >= (3, 13):
+    if version >= (3, 13):
         print("✅ Python 3.13+ detected - testing latest features")
     else:
         print("✅ Supported Python version")
@@ -60,17 +60,17 @@ def test_imports():
 def test_typing_features():
     """Test modern typing features compatibility (Python 3.11+)."""
     try:
-        from typing import Optional, Union
+        # Test basic typing functionality
 
         print("✅ Basic typing imports work")
 
         # Test modern type annotations (Python 3.9+ built-in generics)
-        def test_func(urls: set[str]) -> Optional[str]:
-            return urls.pop() if urls else None
+        test_set: set[str] = {"test"}
+        _ = test_set.pop() if test_set else None
 
         # Test union syntax (Python 3.10+)
-        def test_union(value: str | None) -> bool:
-            return value is not None
+        test_value: str | None = "test"
+        _ = test_value is not None
 
         print("✅ Modern type annotations work")
         print("✅ Union syntax (|) works")
