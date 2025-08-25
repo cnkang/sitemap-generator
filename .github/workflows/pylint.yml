@@ -39,12 +39,12 @@ jobs:
 
       - name: Code formatting check
         run: |
-          black --check --diff --color .
+          black --check --diff .
         continue-on-error: true
 
       - name: Import sorting check
         run: |
-          isort --profile=black --check-only --diff --color .
+          isort --profile=black --check-only --diff .
         continue-on-error: true
 
       - name: Basic linting with flake8
